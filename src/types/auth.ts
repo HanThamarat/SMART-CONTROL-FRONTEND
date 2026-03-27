@@ -1,8 +1,8 @@
 import z from "zod";
 
 export const authDTOEntityShema = z.object({
-    credential:     z.union([z.string(), z.email()]),
-    password:       z.string().min(0).max(24),
+    credential:     z.union([z.string().min(3), z.email()]),
+    password:       z.string().min(6).max(24),
 });
 
 export const authEntityResponseShema = z.object({
