@@ -1,30 +1,52 @@
 "use client";
 
-import FormField from "@/components/form-field";
-import ThemeToggle from "@/components/theme-toggle";
-import { useToast } from "@/components/toast-provider";
-
-const fieldErrors = {
-  email: "",
-  password: "",
-};
+import FormField from "@/app/components/form-field";
+import Button from "@/app/components/button";
+import ThemeToggle from "@/app/components/theme-toggle";
+import { useToast } from "@/app/components/toast-provider";
+import { authDTOEntityShema, authDTOEntityType } from "@/types/auth";
+import { useState } from "react";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useAppDispatch } from "./hooks/appDispatch";
+import { credentialAuth } from "./store/slice/authSlice";
+import Cookies from 'js-cookie';
+import { redirect } from "next/navigation";
 
 export default function SignInForm() {
   const { toast } = useToast();
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const dispatch = useAppDispatch();
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm<authDTOEntityType>({ resolver: zodResolver(authDTOEntityShema) });
 
-    const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "");
+  const onSubmit: SubmitHandler<authDTOEntityType> = async (data) => {
+    setIsLoading(true);
+    
+    const response: any = await dispatch(credentialAuth(data));
 
-    toast({
-      variant: "success",
-      title: "Signed in request captured",
-      description: email
-        ? `Welcome back, ${email}. Your dashboard is getting ready.`
-        : "Your dashboard is getting ready.",
-    });
+    if (response.payload.status) {
+      toast({
+       variant: "success",
+       title: "Signin successfully.",
+       description: `Welcome back, ${data.credential}. Your dashboard is getting ready.`
+      });
+      Cookies.set('authToken', response.payload?.data?.authToken);
+      setIsLoading(false);
+      redirect(`${process.env.NEXT_PUBLIC_AUTH_CALLBACK_URL}/dashboard`);
+    } else {
+      toast({
+       variant: "error",
+       title: "Signin failed.",
+       description: `Have something worning.`
+      });
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -58,34 +80,23 @@ export default function SignInForm() {
                   </p>
                 </div>
 
-                <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+                <form className="mt-8 space-y-5" onSubmit={handleSubmit(onSubmit)}>
                   <FormField
-                    type="email"
-                    name="email"
+                    type="text"
                     label="Email"
                     placeholder="operator@smartcontrol.com"
-                    error={fieldErrors.email}
+                    error={errors.credential?.message}
+                    {...register("credential")}
                   />
 
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-sm font-medium text-[var(--text-secondary)]">
-                        Password
-                      </span>
-                      <a
-                        href="#"
-                        className="text-sm font-medium text-[var(--accent)] transition hover:opacity-75"
-                      >
-                        Forgot password?
-                      </a>
-                    </div>
                     <FormField
                       type="password"
-                      name="password"
-                      label=""
+                      label="Password"
                       placeholder="Enter your password"
-                      error={fieldErrors.password}
+                      error={errors.password?.message}
                       className="mt-0"
+                      {...register("password")}
                     />
                   </div>
 
@@ -103,12 +114,13 @@ export default function SignInForm() {
                     </span>
                   </div>
 
-                  <button
+                  <Button
                     type="submit"
-                    className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-[var(--text-primary)] px-5 text-sm font-semibold text-[var(--accent-contrast)] transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-[color:color-mix(in_srgb,var(--accent-strong)_18%,transparent)]"
+                    colorClassName="bg-[var(--text-primary)] text-[var(--accent-contrast)]"
+                    isLoading={isLoading}
                   >
                     Enter Dashboard
-                  </button>
+                  </Button>
                 </form>
               </div>
             </div>

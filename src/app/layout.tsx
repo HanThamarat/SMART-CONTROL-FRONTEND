@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ReduxProvider from "./hooks/reduxProvider";
-import ThemeProvider, { ThemeScript } from "@/components/theme-provider";
-import ToastProvider from "@/components/toast-provider";
+import ThemeProvider, { ThemeScript } from "@/app/components/theme-provider";
+import ToastProvider from "@/app/components/toast-provider";
 
 export const metadata: Metadata = {
   title: "Smart Control",
