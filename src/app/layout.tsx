@@ -16,7 +16,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="antialiased" suppressHydrationWarning>
-      <body className="antialiased text-[12px] text-[var(--text-secondary)]">
+      <body
+        className="antialiased text-[12px] text-[var(--text-secondary)]"
+        suppressHydrationWarning
+      >
         <ThemeScript />
         <ThemeProvider>
           <ReduxProvider>
