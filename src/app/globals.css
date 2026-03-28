@@ -94,6 +94,47 @@ input {
     opacity 160ms ease;
 }
 
+.widget-range {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 0;
+  outline: none;
+}
+
+.widget-range::-webkit-slider-runnable-track {
+  height: 0.625rem;
+  border-radius: 9999px;
+  background: transparent;
+}
+
+.widget-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -0.3125rem;
+  height: 1.25rem;
+  width: 1.25rem;
+  border-radius: 9999px;
+  border: 3px solid var(--panel-bg);
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.widget-range::-moz-range-track {
+  height: 0.625rem;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+}
+
+.widget-range::-moz-range-thumb {
+  height: 1.25rem;
+  width: 1.25rem;
+  border: 3px solid var(--panel-bg);
+  border-radius: 9999px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
 @keyframes toast-in {
   0% {
     opacity: 0;

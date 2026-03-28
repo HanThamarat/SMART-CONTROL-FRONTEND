@@ -1,11 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import ThemeToggle from "@/app/components/theme-toggle";
+import Button from "@/app/components/button";
+import Cookies from "js-cookie";
+import { useState } from "react";
 import {
   FiCpu,
   FiGrid,
+  FiLogOut,
 } from "react-icons/fi";
 
 type DashboardNavProps = {
@@ -19,6 +23,16 @@ const navigationItems = [
 
 export default function DashboardNav({ onNavigate }: DashboardNavProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = () => {
+    setIsLoggingOut(true);
+    Cookies.remove("authToken");
+    onNavigate?.();
+    router.replace("/");
+    router.refresh();
+  };
 
   return (
     <aside className="flex h-full flex-col justify-between rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--panel-elevated)] p-3 shadow-[0_20px_50px_var(--shadow-soft)] backdrop-blur">
@@ -96,6 +110,18 @@ export default function DashboardNav({ onNavigate }: DashboardNavProps) {
           </div>
           <ThemeToggle />
         </div>
+
+        <Button
+          className="sm:w-full"
+          colorClassName="border border-[var(--border-soft)] bg-[var(--panel-bg)] text-[var(--danger-text)]"
+          isLoading={isLoggingOut}
+          onClick={handleLogout}
+        >
+          <span className="inline-flex items-center gap-2">
+            <FiLogOut className="h-4 w-4" />
+            Logout
+          </span>
+        </Button>
       </div>
     </aside>
   );

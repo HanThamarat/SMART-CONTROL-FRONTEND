@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import Button from "@/app/components/button";
 import WidgetModal from "@/app/dashboard/widget/content/modal";
 import { useAppDispatch } from "@/app/hooks/appDispatch";
+import { useSocket } from "@/app/hooks/socket";
 import { findAllWidgets, widgetSelector } from "@/app/store/slice/widgetSlice";
-import { useSelector } from "react-redux";
 
 type WidgetSetting = {
   current_value?: number;
@@ -18,12 +19,40 @@ export default function WidgetPage() {
   const [widgetValues, setWidgetValues] = useState<Record<number, number>>({});
   const dispatch = useAppDispatch();
   const { widgets, loading } = useSelector(widgetSelector);
+  const { send, isConnected } = useSocket();
   const hasWidgets = Array.isArray(widgets) && widgets.length > 0;
   const skeletonCards = Array.from({ length: 6 });
 
   useEffect(() => {
     dispatch(findAllWidgets());
   }, [dispatch]);
+
+  const handleWidgetValueChange = (widgetId: number, nextValue: number) => {
+    setWidgetValues((current) => ({
+      ...current,
+      [widgetId]: nextValue,
+    }));
+
+    const selectedWidget = widgets.find((item) => item.id === widgetId);
+
+    if (!isConnected || !selectedWidget) {
+      return;
+    }
+
+    const widgetSetting = (selectedWidget.widget_setting ?? {}) as WidgetSetting;
+
+    send({
+      event: "mqtt:publish",
+      data: {
+        topic: selectedWidget.widget_name,
+        payload: {
+          max_value: widgetSetting.max_value,
+          min_value: widgetSetting.min_value,
+          current_value: nextValue,
+        },
+      },
+    });
+  };
 
   return (
     <>
@@ -114,81 +143,81 @@ export default function WidgetPage() {
             </div>
           ) : null}
 
-          {!loading && hasWidgets && widgets.map((widget) => {
-            const widgetSetting = (widget.widget_setting ?? {}) as WidgetSetting;
-            const minValue = Number(widgetSetting.min_value ?? 0);
-            const maxValue = Number(widgetSetting.max_value ?? 100);
-            const currentValue =
-              widgetValues[widget.id] ?? Number(widgetSetting.current_value ?? 0);
-            const progress = maxValue > minValue
-              ? ((currentValue - minValue) / (maxValue - minValue)) * 100
-              : 0;
+          {!loading &&
+            hasWidgets &&
+            widgets.map((widget) => {
+              const widgetSetting = (widget.widget_setting ?? {}) as WidgetSetting;
+              const minValue = Number(widgetSetting.min_value ?? 0);
+              const maxValue = Number(widgetSetting.max_value ?? 100);
+              const currentValue =
+                widgetValues[widget.id] ??
+                Number(widgetSetting.current_value ?? 0);
+              const progress =
+                maxValue > minValue
+                  ? ((currentValue - minValue) / (maxValue - minValue)) * 100
+                  : 0;
 
-            return (
-              <article
-                key={widget.id}
-                className="overflow-hidden rounded-[1.75rem] border border-[var(--border-soft)] bg-[var(--panel-bg)] p-5 shadow-[0_18px_42px_var(--shadow-soft)]"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">
-                      {widget.widget_type}
-                    </p>
-                    <h3 className="mt-2 text-xl font-semibold text-[var(--text-primary)]">
-                      {widget.widget_name}
-                    </h3>
-                  </div>
-                  <span
-                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                      widget.status
-                        ? "bg-[var(--success-soft)] text-[var(--success-text)]"
-                        : "bg-[var(--danger-soft)] text-[var(--danger-text)]"
-                    }`}
-                  >
-                    {widget.status ? "Active" : "Inactive"}
-                  </span>
-                </div>
-
-                <div className="mt-6 rounded-[1.5rem] bg-[var(--panel-muted)] p-4">
-                  <div className="flex items-end justify-between gap-4">
+              return (
+                <article
+                  key={widget.id}
+                  className="overflow-hidden rounded-[1.75rem] border border-[var(--border-soft)] bg-[var(--panel-bg)] p-5 shadow-[0_18px_42px_var(--shadow-soft)]"
+                >
+                  <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.22em] text-[var(--text-muted)]">
-                        Current Value
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">
+                        {widget.widget_type}
                       </p>
-                      <p className="mt-2 text-4xl font-semibold tracking-tight text-[var(--text-primary)]">
-                        {currentValue}
-                      </p>
+                      <h3 className="mt-2 text-xl font-semibold text-[var(--text-primary)]">
+                        {widget.widget_name}
+                      </h3>
                     </div>
-                    <div className="text-right text-xs text-[var(--text-muted)]">
-                      <p>Min {minValue}</p>
-                      <p className="mt-1">Max {maxValue}</p>
-                    </div>
+                    <span
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                        widget.status
+                          ? "bg-[var(--success-soft)] text-[var(--success-text)]"
+                          : "bg-[var(--danger-soft)] text-[var(--danger-text)]"
+                      }`}
+                    >
+                      {widget.status ? "Active" : "Inactive"}
+                    </span>
                   </div>
 
-                  <div className="mt-5 h-3 overflow-hidden rounded-full bg-[var(--surface-strong)]">
-                    <div
-                      className="h-full rounded-full bg-[linear-gradient(90deg,var(--accent),var(--accent-strong))]"
-                      style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+                  <div className="mt-6 rounded-[1.5rem] bg-[var(--panel-muted)] p-4">
+                    <div className="flex items-end justify-between gap-4">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                          Current Value
+                        </p>
+                        <p className="mt-2 text-4xl font-semibold tracking-tight text-[var(--text-primary)]">
+                          {currentValue}
+                        </p>
+                      </div>
+                      <div className="text-right text-xs text-[var(--text-muted)]">
+                        <p>Min {minValue}</p>
+                        <p className="mt-1">Max {maxValue}</p>
+                      </div>
+                    </div>
+
+                    <input
+                      type="range"
+                      min={minValue}
+                      max={maxValue}
+                      value={currentValue}
+                      onChange={(event) =>
+                        handleWidgetValueChange(
+                          widget.id,
+                          Number(event.target.value)
+                        )
+                      }
+                      className="widget-range mt-5 h-2.5 w-full cursor-pointer rounded-full"
+                      style={{
+                        background: `linear-gradient(90deg, var(--accent) 0%, var(--accent-strong) ${Math.max(0, Math.min(100, progress))}%, var(--surface-strong) ${Math.max(0, Math.min(100, progress))}%, var(--surface-strong) 100%)`,
+                      }}
                     />
                   </div>
-
-                  <input
-                    type="range"
-                    min={minValue}
-                    max={maxValue}
-                    value={currentValue}
-                    onChange={(event) =>
-                      setWidgetValues((current) => ({
-                        ...current,
-                        [widget.id]: Number(event.target.value),
-                      }))
-                    }
-                    className="mt-5 h-2 w-full cursor-pointer appearance-none rounded-full bg-transparent accent-[var(--accent)]"
-                  />
-                </div>
-              </article>
-            );
-          })}
+                </article>
+              );
+            })}
         </section>
       </div>
 
