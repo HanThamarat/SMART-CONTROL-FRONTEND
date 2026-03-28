@@ -3,6 +3,27 @@
 import Cookies from "js-cookie";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+function resolveSocketUrl(rawSocketUrl: string) {
+  const url = new URL(rawSocketUrl, window.location.origin);
+  const requiresSecureSocket = window.location.protocol === "https:";
+
+  if (url.protocol === "http:" || url.protocol === "https:") {
+    url.protocol = requiresSecureSocket ? "wss:" : "ws:";
+    return url.toString();
+  }
+
+  if (url.protocol === "ws:") {
+    url.protocol = requiresSecureSocket ? "wss:" : "ws:";
+    return url.toString();
+  }
+
+  if (url.protocol === "wss:") {
+    return url.toString();
+  }
+
+  throw new Error(`Unsupported websocket protocol: ${url.protocol}`);
+}
+
 export function useSocket() {
   const socketRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -15,9 +36,10 @@ export function useSocket() {
       return;
     }
 
-    const separator = socketUrl.includes("?") ? "&" : "?";
+    const resolvedSocketUrl = resolveSocketUrl(socketUrl);
+    const separator = resolvedSocketUrl.includes("?") ? "&" : "?";
     const nextSocket = new WebSocket(
-      `${socketUrl}${separator}token=${encodeURIComponent(authToken)}`
+      `${resolvedSocketUrl}${separator}token=${encodeURIComponent(authToken)}`
     );
 
     socketRef.current = nextSocket;
