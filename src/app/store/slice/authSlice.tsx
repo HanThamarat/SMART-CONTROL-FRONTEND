@@ -11,7 +11,9 @@ export const credentialAuth = createAsyncThunk("authSlice/credentialAuth", async
     try {
         const response = await AxiosInstance.post("/auth_service/credential", data);
 
-         return { status: true, data: response.data.body };
+        console.log(response.status);
+
+        return { status: true, data: response.data.body };
     } catch (error: any) {
         return { status: false, error: error?.response.data.error.message };
     }

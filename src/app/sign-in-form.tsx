@@ -38,7 +38,7 @@ export default function SignInForm() {
       });
       Cookies.set('authToken', response.payload?.data?.authToken);
       setIsLoading(false);
-      redirect(`${process.env.NEXT_PUBLIC_AUTH_CALLBACK_URL}/dashboard`);
+     window.location.assign(`${process.env.NEXT_PUBLIC_AUTH_CALLBACK_URL}/dashboard`);
     } else {
       toast({
        variant: "error",
